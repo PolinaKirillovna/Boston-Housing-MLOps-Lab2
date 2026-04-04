@@ -12,3 +12,7 @@ httpx
 dvc
 requests
 pyyaml
+sqlalchemy
+alembic
+pyodbc
+python-dotenv

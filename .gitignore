@@ -3,6 +3,8 @@ __pycache__/
 *.py[cod]
 *.pyo
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
 
 # IDE
 .idea/
@@ -18,4 +20,20 @@ venv/
 
 # Generated artifacts
 submission.csv
-/metrics.json
+metrics.json
+
+# Database / local runtime
+*.db
+*.sqlite3
+
+# Alembic cache
+alembic/__pycache__/
+
+# Test coverage
+.coverage
+htmlcov/
+
+# Build artifacts
+dist/
+build/
+*.egg-info/

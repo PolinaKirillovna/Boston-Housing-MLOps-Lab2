@@ -4,15 +4,21 @@ from pathlib import Path
 from typing import Any
 
 import joblib
-import pandas as pd
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, Field
+from sqlalchemy import text
+from sqlalchemy.orm import Session
 
+from app.dependencies.database import get_db
+from app.schemas.prediction import (
+    DbHealthResponse,
+    HealthResponse,
+    HouseFeatures,
+    PredictionResponse,
+)
+from app.services.prediction_service import PredictionService
 from src.config import BASE_DIR, load_config
-from src.train import FEATURE_COLUMNS
-
 
 CONFIG = load_config()
 MODEL_PATH = BASE_DIR / CONFIG["paths"]["model_path"]
@@ -21,9 +27,8 @@ FRONTEND_DIR = BASE_DIR / "frontend"
 app = FastAPI(
     title="Boston Housing Prediction API",
     description="API and web UI for predicting Boston Housing target variable medv",
-    version="1.2.0",
+    version="2.0.0",
 )
-
 
 FEATURE_METADATA = [
     {
@@ -120,47 +125,12 @@ FEATURE_METADATA = [
 ]
 
 
-class HouseFeatures(BaseModel):
-    """Input schema for Boston Housing prediction request."""
-
-    crim: float = Field(..., json_schema_extra={"example": 0.02729})
-    zn: float = Field(..., json_schema_extra={"example": 0.0})
-    indus: float = Field(..., json_schema_extra={"example": 7.07})
-    chas: int = Field(..., json_schema_extra={"example": 0})
-    nox: float = Field(..., json_schema_extra={"example": 0.469})
-    rm: float = Field(..., json_schema_extra={"example": 7.185})
-    age: float = Field(..., json_schema_extra={"example": 61.1})
-    dis: float = Field(..., json_schema_extra={"example": 4.9671})
-    rad: int = Field(..., json_schema_extra={"example": 2})
-    tax: int = Field(..., json_schema_extra={"example": 242})
-    ptratio: float = Field(..., json_schema_extra={"example": 17.8})
-    black: float = Field(..., json_schema_extra={"example": 392.83})
-    lstat: float = Field(..., json_schema_extra={"example": 4.03})
-
-
-class PredictionResponse(BaseModel):
-    """Output schema for prediction response."""
-
-    predicted_medv: float
-
-
 def load_model(model_path: Path = MODEL_PATH) -> Any:
-    """Load trained model artifact from disk.
-
-    Args:
-        model_path: Path to serialized model file.
-
-    Returns:
-        Loaded model instance.
-
-    Raises:
-        FileNotFoundError: If model artifact does not exist.
-    """
+    """Load trained model artifact from disk."""
     if not model_path.exists():
         raise FileNotFoundError(
             f"Model file not found: {model_path}. Run training first."
         )
-
     return joblib.load(model_path)
 
 
@@ -177,13 +147,23 @@ def index() -> FileResponse:
     return FileResponse(index_path)
 
 
-@app.get("/health")
-def health_check() -> dict[str, bool | str]:
+@app.get("/health", response_model=HealthResponse)
+def health_check() -> HealthResponse:
     """Return application health status."""
-    return {
-        "status": "ok",
-        "model_exists": MODEL_PATH.exists(),
-    }
+    return HealthResponse(
+        status="ok",
+        model_exists=MODEL_PATH.exists(),
+    )
+
+
+@app.get("/db-health", response_model=DbHealthResponse)
+def db_health_check(db: Session = Depends(get_db)) -> DbHealthResponse:
+    """Check database connectivity."""
+    try:
+        db.execute(text("SELECT 1"))
+        return DbHealthResponse(status="ok", database="reachable")
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Database is unavailable: {exc}") from exc
 
 
 @app.get("/feature-metadata")
@@ -194,21 +174,18 @@ def feature_metadata() -> dict[str, Any]:
         "target": "medv",
     }
 
+
 @app.post("/predict", response_model=PredictionResponse)
-def predict(features: HouseFeatures) -> PredictionResponse:
-    """Generate house price prediction for provided features.
-
-    Args:
-        features: Validated input payload.
-
-    Returns:
-        PredictionResponse with predicted house price.
-    """
+def predict(
+    features: HouseFeatures,
+    db: Session = Depends(get_db),
+) -> PredictionResponse:
+    """Generate house price prediction and store it in MS SQL Server."""
     try:
         model = load_model()
-        input_df = pd.DataFrame([features.model_dump()])[FEATURE_COLUMNS]
-        prediction = float(model.predict(input_df)[0])
-        return PredictionResponse(predicted_medv=round(prediction, 4))
+        service = PredictionService(model=model, db_session=db)
+        result = service.predict_and_store(features=features.model_dump(), source="api")
+        return PredictionResponse(**result)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
     except Exception as exc:
