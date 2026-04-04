@@ -269,3 +269,20 @@ dvc init
 DVC stage `train` формирует:
 - `models/model.joblib` — артефакт модели
 - `metrics.json` — метрики обучения
+
+## Docker
+
+### Сборка образа
+```bash
+docker build -t boston-housing-api:latest .
+```
+
+### Запуск контейнера
+```bash
+docker compose up --build
+```
+
+### Проверка API
+```bash
+curl http://127.0.0.1:8000/health
+```
