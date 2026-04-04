@@ -12,6 +12,10 @@ jobs:
   test-and-build:
     runs-on: ubuntu-latest
 
+    env:
+      LOCAL_IMAGE_NAME: boston-housing-api:latest
+      REMOTE_IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/boston-housing-api:latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -32,7 +36,7 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/boston-housing-api:latest .
+          docker build -t $LOCAL_IMAGE_NAME .
 
       - name: Log in to Docker Hub
         if: github.event_name == 'push'
@@ -41,7 +45,12 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Tag Docker image for Docker Hub
+        if: github.event_name == 'push'
+        run: |
+          docker tag $LOCAL_IMAGE_NAME $REMOTE_IMAGE_NAME
+
       - name: Push Docker image
         if: github.event_name == 'push'
         run: |
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/boston-housing-api:latest
+          docker push $REMOTE_IMAGE_NAME
