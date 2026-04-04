@@ -286,3 +286,20 @@ docker compose up --build
 ```bash
 curl http://127.0.0.1:8000/health
 ```
+
+## CI/CD
+
+Проект использует GitHub Actions.
+
+### CI pipeline
+CI выполняет:
+- установку зависимостей;
+- запуск unit-тестов;
+- сборку Docker image;
+- push image в Docker Hub.
+
+### CD pipeline
+CD выполняет:
+- запуск контейнера из Docker image;
+- ожидание готовности API;
+- функциональное тестирование по `scenario.json`.

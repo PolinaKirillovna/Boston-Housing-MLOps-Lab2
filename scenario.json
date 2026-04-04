@@ -1,0 +1,46 @@
+{
+  "name": "boston-housing-api-functional-test",
+  "base_url": "http://127.0.0.1:8000",
+  "steps": [
+    {
+      "name": "healthcheck",
+      "method": "GET",
+      "endpoint": "/health",
+      "expected_status": 200,
+      "expected_body_contains": {
+        "status": "ok",
+        "model_exists": true
+      }
+    },
+    {
+      "name": "feature-metadata",
+      "method": "GET",
+      "endpoint": "/feature-metadata",
+      "expected_status": 200
+    },
+    {
+      "name": "predict",
+      "method": "POST",
+      "endpoint": "/predict",
+      "expected_status": 200,
+      "json": {
+        "crim": 0.02729,
+        "zn": 0.0,
+        "indus": 7.07,
+        "chas": 0,
+        "nox": 0.469,
+        "rm": 7.185,
+        "age": 61.1,
+        "dis": 4.9671,
+        "rad": 2,
+        "tax": 242,
+        "ptratio": 17.8,
+        "black": 392.83,
+        "lstat": 4.03
+      },
+      "expected_body_keys": [
+        "predicted_medv"
+      ]
+    }
+  ]
+}

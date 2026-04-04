@@ -1,0 +1,31 @@
+project:
+  name: boston-housing-mlops
+  repository_branch: master
+
+docker:
+  image_name: your_dockerhub_username/boston-housing-api
+  image_tag: latest
+  signing: not_enabled
+
+git:
+  last_5_commits:
+    - "<commit_hash_1>"
+    - "<commit_hash_2>"
+    - "<commit_hash_3>"
+    - "<commit_hash_4>"
+    - "<commit_hash_5>"
+
+quality:
+  test_framework: pytest
+  test_command: "pytest -v"
+  coverage_enabled: false
+
+security:
+  secrets_in_repo: false
+  dependency_audit: not_enabled
+  image_scan: not_enabled
+
+artifacts:
+  model_path: models/model.joblib
+  metrics_path: metrics.json
+  scenario_path: scenario.json

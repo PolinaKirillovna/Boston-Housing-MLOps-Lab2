@@ -10,3 +10,5 @@ pydantic
 pytest
 httpx
 dvc
+requests
+pyyaml
