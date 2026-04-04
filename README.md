@@ -257,3 +257,10 @@ pytest -v
 - batch prediction;
 - API endpoints.
 
+## DVC pipeline
+
+Проект использует DVC для воспроизводимого обучения модели.
+
+### Инициализация DVC
+```bash
+dvc init
