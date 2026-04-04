@@ -2,11 +2,10 @@ name: CI
 
 on:
   pull_request:
-    branches:
-      - master
+    branches: [master]
   push:
-    branches:
-      - master
+    branches: [master]
+  workflow_dispatch:
 
 jobs:
   test-and-build:
@@ -15,6 +14,16 @@ jobs:
     env:
       LOCAL_IMAGE_NAME: boston-housing-api:latest
       REMOTE_IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/boston-housing-api:latest
+      MSSQL_SERVER: dummy
+      MSSQL_PORT: "1433"
+      MSSQL_DATABASE: dummy
+      MSSQL_USER: dummy
+      MSSQL_PASSWORD: dummy
+      MSSQL_DRIVER: ODBC Driver 18 for SQL Server
+      JWT_SECRET_KEY: test_secret_key_123456789
+      JWT_ALGORITHM: HS256
+      JWT_ACCESS_TOKEN_EXPIRE_MINUTES: "60"
+      MODEL_VERSION: ci-test-model
 
     steps:
       - name: Checkout repository
@@ -25,14 +34,19 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Install system dependencies for pyodbc
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y unixodbc unixodbc-dev gcc g++
+
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run unit tests
+      - name: Run unit and integration tests
         run: |
-          pytest -v
+          pytest -q
 
       - name: Build Docker image
         run: |
