@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Boston Housing Predictor</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+    <div class="page-shell">
+        <header class="hero">
+            <div class="hero-copy">
+                <span class="eyebrow">Boston Housing • MLOps Demo</span>
+                <h1>House Price Prediction Dashboard</h1>
+                <p>
+                    Enter housing characteristics, get an estimated property value,
+                    and explore which features are most important for the trained model.
+                </p>
+            </div>
+            <div class="hero-card">
+                <div class="hero-card-label">Model</div>
+                <div class="hero-card-value">RandomForestRegressor</div>
+                <div class="hero-card-subtitle">Metric: RMSE ≈ 2.8</div>
+            </div>
+        </header>
+
+        <main class="dashboard">
+            <section class="panel panel-form">
+                <div class="panel-header">
+                    <h2>Input Parameters</h2>
+                    <p>Friendly labels are shown here, while the backend still uses the original dataset schema.</p>
+                </div>
+
+                <form id="prediction-form">
+                    <div id="form-grid" class="form-grid"></div>
+
+                    <div class="actions">
+                        <button type="button" id="fill-demo-btn" class="btn btn-secondary">Fill demo values</button>
+                        <button type="submit" class="btn btn-primary">Predict price</button>
+                    </div>
+                </form>
+            </section>
+
+            <section class="panel panel-result">
+                <div class="panel-header">
+                    <h2>Prediction Result</h2>
+                    <p>The predicted value is returned by the FastAPI backend.</p>
+                </div>
+
+                <div class="result-card">
+                    <div class="result-label">Predicted MEDV</div>
+                    <div id="prediction-value" class="result-value">—</div>
+                    <div class="result-hint">This is the estimated target value produced by the model.</div>
+                </div>
+
+                <div id="request-status" class="request-status"></div>
+            </section>
+        </main>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

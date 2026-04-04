@@ -1,305 +1,193 @@
-# Boston Housing ML Project
+# Boston Housing MLOps Project
 
-## Описание проекта
-Учебный MLOps-проект по теме **«Классический жизненный цикл разработки моделей машинного обучения»** для предсказания стоимости жилья в пригородах Бостона.
+## Description
+MLOps project implementing a full machine learning lifecycle for regression task using Boston Housing dataset.
 
-Целевая переменная: `medv`  
-Тип задачи: **регрессия**  
-Основная метрика: **RMSE**
+Target variable: `medv`  
+Task type: regression  
+Metric: RMSE  
 
-## Датасет
-Используется датасет **Boston Housing** (вариант 4).
+---
 
-Основные файлы данных:
-- `data/raw/train.csv`
-- `data/raw/test.csv`
-- `data/raw/submission_example.csv`
+## Technologies
 
-## Исследование и выбор модели
-На этапе исследования в Google Colab были протестированы несколько моделей:
-- `LinearRegression` — baseline;
-- `Ridge` — улучшенная линейная модель;
-- `RandomForestRegressor` — основная выбранная модель.
+- Python 3.12
+- pandas, numpy
+- scikit-learn
+- FastAPI
+- pydantic
+- pytest
+- DVC
+- Docker, docker-compose
+- GitHub Actions (CI/CD)
 
-## Метрика качества
-Основная метрика проекта: **RMSE**.
+---
 
-Текущий результат локальной валидации:
-- **RMSE ≈ 2.8**
+## Project Structure
 
-## Текущее состояние проекта
-На текущем этапе реализовано:
-- базовый EDA и выбор модели в Google Colab;
-- перенос обучения в Python-скрипт;
-- сохранение обученной модели в `models/model.joblib`;
-- batch prediction для `test.csv`;
-- FastAPI API с endpoint'ами:
-  - `GET /health`
-  - `GET /feature-metadata`
-  - `POST /predict`
-- `config.ini` для параметров проекта и модели;
-- тесты на обучение, batch prediction и API;
-- `.editorconfig` для единообразного стиля кода;
-- docstring-документация для модулей, функций и классов.
-
-## Структура проекта
-```text
+```
 Boston-Housing-MLOps/
-├── app/
-│   ├── __init__.py
-│   └── main.py                 # FastAPI приложение
-├── data/
-│   └── raw/
-│       ├── train.csv
-│       ├── test.csv
-│       └── submission_example.csv
-├── models/
-│   └── model.joblib            # обученная модель
-├── notebooks/
-│   └── ...                     # ноутбуки Colab / Jupyter
-├── src/
-│   ├── __init__.py
-│   ├── config.py               # загрузка config.ini
-│   ├── train.py                # обучение модели
-│   └── predict.py              # batch prediction
-├── tests/
-│   ├── __init__.py
-│   ├── conftest.py
-│   ├── test_api.py
-│   ├── test_predict.py
-│   └── test_train.py
-├── .editorconfig
-├── config.ini
-├── pytest.ini
+├── app/                    # FastAPI application
+│   └── main.py
+├── src/                    # training and inference logic
+│   ├── train.py
+│   ├── predict.py
+│   └── config.py
+├── data/raw/               # datasets
+├── models/                 # trained model artifact
+├── tests/                  # unit tests
+├── frontend/               # web UI (static files)
+├── scripts/                # scenario runner
+├── .github/workflows/      # CI/CD pipelines
+├── config.ini              # configuration
+├── dvc.yaml                # DVC pipeline
+├── Dockerfile
+├── docker-compose.yml
 ├── requirements.txt
-├── README.md
-└── .gitignore
+└── README.md
 ```
 
-## Требования к окружению
-Рекомендуемая среда:
-- **macOS**
-- **PyCharm Community**
-- **conda / Anaconda**
-- **Python 3.12**
+---
 
-## Зависимости
-Основные зависимости проекта:
-- `pandas`
-- `numpy`
-- `scikit-learn`
-- `matplotlib`
-- `seaborn`
-- `fastapi`
-- `uvicorn`
-- `joblib`
-- `pydantic`
-- `pytest`
-- `httpx`
+## Setup
 
-## Подготовка окружения
-
-### 1. Активировать conda-окружение
 ```bash
 conda activate boston-mlops-py312
-```
-
-### 2. Установить зависимости
-```bash
 pip install -r requirements.txt
 ```
 
-### 3. Подготовить данные
-CSV-файлы должны лежать в папке:
+---
 
-```text
-data/raw/
-```
+## Training
 
-Ожидаемые файлы:
-- `train.csv`
-- `test.csv`
-- `submission_example.csv`
-
-## Конфигурация проекта
-Проект использует файл `config.ini`.
-
-Пример основных параметров:
-- `random_state`
-- `target_col`
-- `id_col`
-- пути к train/test/model/submission
-- гиперпараметры `RandomForestRegressor`
-- `test_size`
-
-Это позволяет:
-- убрать хардкод из Python-скриптов;
-- упростить изменение параметров обучения;
-- подготовить проект к DVC, Docker и CI/CD.
-
-## Как запускать проект
-Все команды выполняются **из корня проекта**.
-
-### 1. Обучение модели
 ```bash
 python -m src.train
 ```
 
-Что делает команда:
-- читает `data/raw/train.csv`;
-- проверяет обязательные колонки;
-- выделяет признаки и target;
-- делит данные на train/validation;
-- обучает `RandomForestRegressor`;
-- считает RMSE;
-- сохраняет модель в `models/model.joblib`.
+Result:
+- model saved to `models/model.joblib`
+- RMSE printed in console
 
-Ожидаемый результат:
-- создаётся или обновляется файл `models/model.joblib`;
-- в консоли печатается `Validation RMSE`.
+---
 
-### 2. Сформировать предсказания для test.csv
+## Batch Prediction
+
 ```bash
 python -m src.predict
 ```
 
-Что делает команда:
-- загружает сохранённую модель;
-- читает `data/raw/test.csv`;
-- валидирует набор признаков;
-- создаёт `submission.csv` в корне проекта.
+Result:
+- `submission.csv` generated
 
-### 3. Запустить API
+---
+
+## API
+
+Run:
+
 ```bash
 python -m uvicorn app.main:app --reload
 ```
 
-После запуска сервис доступен по адресам:
-- API: `http://127.0.0.1:8000`
-- Swagger UI: `http://127.0.0.1:8000/docs`
+Available endpoints:
 
-## API
+- `GET /health`
+- `GET /feature-metadata`
+- `POST /predict`
 
-### GET /health
-Проверка состояния приложения и наличия модели.
-
-Пример ответа:
-```json
-{
-  "status": "ok",
-  "model_exists": true
-}
+Swagger:
+```
+http://127.0.0.1:8000/docs
 ```
 
-### GET /feature-metadata
-Служебный endpoint для фронтенда и интеграций.
+---
 
-Пример ответа:
-```json
-{
-  "features": [
-    "crim",
-    "zn",
-    "indus",
-    "chas",
-    "nox",
-    "rm",
-    "age",
-    "dis",
-    "rad",
-    "tax",
-    "ptratio",
-    "black",
-    "lstat"
-  ],
-  "target": "medv"
-}
+## Frontend
+
+Available at:
+```
+http://127.0.0.1:8000/
 ```
 
-### POST /predict
-Предсказание `medv` по набору признаков дома.
+Features:
+- input form for 13 features
+- prediction display
+- formatted output (e.g. `$31.84k`)
 
-Пример запроса:
-```json
-{
-  "crim": 0.02729,
-  "zn": 0.0,
-  "indus": 7.07,
-  "chas": 0,
-  "nox": 0.469,
-  "rm": 7.185,
-  "age": 61.1,
-  "dis": 4.9671,
-  "rad": 2,
-  "tax": 242,
-  "ptratio": 17.8,
-  "black": 392.83,
-  "lstat": 4.03
-}
-```
+---
 
-Пример ответа:
-```json
-{
-  "predicted_medv": 31.8421
-}
-```
+## Testing
 
-## Тестирование
-
-### Запуск всех тестов
 ```bash
 pytest -v
 ```
 
-Тестами покрыты:
-- функции обучения;
-- batch prediction;
-- API endpoints.
+Covers:
+- training logic
+- prediction logic
+- API endpoints
 
-## DVC pipeline
+---
 
-Проект использует DVC для воспроизводимого обучения модели.
+## DVC
 
-### Инициализация DVC
 ```bash
-dvc init 
+dvc repro
 ```
 
-DVC stage `train` формирует:
-- `models/model.joblib` — артефакт модели
-- `metrics.json` — метрики обучения
+Tracks:
+- model artifact
+- metrics
+
+---
 
 ## Docker
 
-### Сборка образа
+Build:
+
 ```bash
 docker build -t boston-housing-api:latest .
 ```
 
-### Запуск контейнера
+Run:
+
 ```bash
 docker compose up --build
 ```
 
-### Проверка API
+Check:
+
 ```bash
 curl http://127.0.0.1:8000/health
 ```
 
+---
+
 ## CI/CD
 
-Проект использует GitHub Actions.
+### CI (GitHub Actions)
 
-### CI pipeline
-CI выполняет:
-- установку зависимостей;
-- запуск unit-тестов;
-- сборку Docker image;
-- push image в Docker Hub.
+- install dependencies
+- run tests
+- build Docker image
+- push image to DockerHub
 
-### CD pipeline
-CD выполняет:
-- запуск контейнера из Docker image;
-- ожидание готовности API;
-- функциональное тестирование по `scenario.json`.
+### CD
+
+- pull image from DockerHub
+- run container
+- wait for API readiness
+- run scenario tests
+
+---
+
+## Scenario testing
+
+```bash
+python scripts/run_scenario.py
+```
+
+Validates:
+- health endpoint
+- metadata endpoint
+- prediction endpoint
