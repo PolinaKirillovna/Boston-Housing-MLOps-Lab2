@@ -8,6 +8,7 @@ from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user
@@ -84,8 +85,11 @@ def db_health_check(db: Session = Depends(get_db)) -> DbHealthResponse:
     try:
         db.execute(text("SELECT 1"))
         return DbHealthResponse(status="ok", database="reachable")
-    except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Database is unavailable: {exc}") from exc
+    except SQLAlchemyError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail=f"Database is unavailable: {exc}",
+        ) from exc
 
 
 @app.get("/feature-metadata")
@@ -134,14 +138,25 @@ def predict(
 ) -> PredictionResponse:
     try:
         model = load_model()
-        service = PredictionService(model=model, db_session=db)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+    service = PredictionService(model=model, db_session=db)
+    try:
         result = service.predict_and_store(
             user_id=current_user.id,
             features=features.model_dump(),
             source="api",
         )
-        return PredictionResponse(**result)
-    except FileNotFoundError as exc:
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
-    except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Prediction failed: {exc}") from exc
+    except (KeyError, ValueError) as exc:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Invalid feature payload: {exc}",
+        ) from exc
+    except SQLAlchemyError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail=f"Failed to persist prediction: {exc}",
+        ) from exc
+
+    return PredictionResponse(**result)
