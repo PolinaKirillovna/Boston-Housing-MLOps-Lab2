@@ -1,16 +1,21 @@
 {
   "name": "boston-housing-api-functional-test",
   "base_url": "http://127.0.0.1:8000",
+  "wait_for": ["/health", "/db-health"],
   "steps": [
     {
       "name": "healthcheck",
       "method": "GET",
       "endpoint": "/health",
       "expected_status": 200,
-      "expected_body_contains": {
-        "status": "ok",
-        "model_exists": true
-      }
+      "expected_body_contains": { "status": "ok", "model_exists": true }
+    },
+    {
+      "name": "db-healthcheck",
+      "method": "GET",
+      "endpoint": "/db-health",
+      "expected_status": 200,
+      "expected_body_contains": { "status": "ok" }
     },
     {
       "name": "feature-metadata",
@@ -19,28 +24,44 @@
       "expected_status": 200
     },
     {
+      "name": "register",
+      "method": "POST",
+      "endpoint": "/register",
+      "json": { "username": "ci_user", "password": "strongpass123" },
+      "expected_status": [201, 400]
+    },
+    {
+      "name": "login",
+      "method": "POST",
+      "endpoint": "/login",
+      "json": { "username": "ci_user", "password": "strongpass123" },
+      "expected_status": 200,
+      "save": { "token": "access_token" }
+    },
+    {
+      "name": "predict-unauthorized",
+      "method": "POST",
+      "endpoint": "/predict",
+      "json": {
+        "crim": 0.02729, "zn": 0.0, "indus": 7.07, "chas": 0, "nox": 0.469,
+        "rm": 7.185, "age": 61.1, "dis": 4.9671, "rad": 2, "tax": 242,
+        "ptratio": 17.8, "black": 392.83, "lstat": 4.03
+      },
+      "expected_status": 401
+    },
+    {
       "name": "predict",
       "method": "POST",
       "endpoint": "/predict",
-      "expected_status": 200,
+      "auth": "token",
       "json": {
-        "crim": 0.02729,
-        "zn": 0.0,
-        "indus": 7.07,
-        "chas": 0,
-        "nox": 0.469,
-        "rm": 7.185,
-        "age": 61.1,
-        "dis": 4.9671,
-        "rad": 2,
-        "tax": 242,
-        "ptratio": 17.8,
-        "black": 392.83,
-        "lstat": 4.03
+        "crim": 0.02729, "zn": 0.0, "indus": 7.07, "chas": 0, "nox": 0.469,
+        "rm": 7.185, "age": 61.1, "dis": 4.9671, "rad": 2, "tax": 242,
+        "ptratio": 17.8, "black": 392.83, "lstat": 4.03
       },
-      "expected_body_keys": [
-        "predicted_medv"
-      ]
+      "expected_status": 200,
+      "expected_body_contains": { "stored": true },
+      "expected_body_keys": ["request_id", "predicted_medv"]
     }
   ]
 }
